@@ -1,5 +1,5 @@
 # names-dataprep.py
-Preps Excel data for use in Names Registry project. 
+Preps Excel data for use in Names Registry project.
 Takes names project excel files, performs data prep operations
 (removes extraneous cols/rows, normalizes col names, etc.), then saves data 
 in CSV format and schema info about the input files as a text file. 
@@ -54,6 +54,7 @@ However, all of the other excel data will continue to be processed
 for the consolidated file.
 
 The required columns for consolidated file are: 
+
 ```
     'original_order',
     'far_line_id',
@@ -62,4 +63,5 @@ The required columns for consolidated file are:
     'other_names',
     'date_of_birth',
     'family_number'
+
 ```

@@ -35,6 +35,7 @@ def doAnalyze(df,filename):
 def doFilters(namesdata):
     #remove empty rows
     namesdata.dropna(axis='index',how='all',inplace=True)
+
     #trim column names
     namesdata.columns.str.strip()
     #normalize column names
@@ -52,6 +53,7 @@ def doSimplify(namesdata,filename):
                 'first_name_corrected', 
                 'other_names',
                 'date_of_birth',
+                'year_of_birth',
                 'family_number']
     missingcols = []
     #check if required cols are missing
@@ -64,11 +66,11 @@ def doSimplify(namesdata,filename):
         #drop extra cols; reorder
         namesdata = namesdata[keepcols]
         #add column for file identifier
-        namesdata['far'] = os.path.splitext(os.path.basename(filename))[0]
+        namesdata.loc[:,'far'] = os.path.splitext(os.path.basename(filename))[0]
 
     return(namesdata,missingcols)
 
-def doPrep(inpath,outpath,analyze_only,consolidate):
+def doPrep(inpath,outpath,analyze_only,consolidate,keep_types):
     
     filesindir = 0
     processed = 0
@@ -91,7 +93,14 @@ def doPrep(inpath,outpath,analyze_only,consolidate):
                     report = open(analyzefile,'w')
                     report.write('names-dataprep.py analyze run at {:%c} on path: {}\n'.format(datetime.datetime.now(),inpath))
                     report.close()
-                namesdata = pandas.read_excel(infile)
+                #import all vals as strings, unless --keep-types set
+                if keep_types:
+                    namesdata = pandas.read_excel(infile)
+                else:
+                    namesdata = pandas.read_excel(infile,dtype=str)
+                    #replace nan vals with empty string
+                    namesdata = namesdata.replace('nan','',regex=True)
+
                 processed +=1
                 currentrows = 0
                 analysis, currentrows = doAnalyze(namesdata,infile)
@@ -107,7 +116,7 @@ def doPrep(inpath,outpath,analyze_only,consolidate):
                         if not missingcols:
                             #write namesdata to csv; print headers only if first pass
                             namesdata.to_csv(consolidatedfile,mode='a',header=(not os.path.exists(consolidatedfile)))
-                            print('Added filtered csv to consolidated: {}'.format(os.path.abspath(file)))
+                            print('Added filtered csv to consolidated: {}\n'.format(os.path.abspath(file)))
                         else:
                             print('WARNING: Skipping {} for consolidation. Missing columns: {}'.format(os.path.abspath(file),missingcols))
                     else:
@@ -127,6 +136,8 @@ def main():
     parser.add_argument('outpath', nargs='?', default=os.getcwd(), help='Path to write filtered files.')
     parser.add_argument('-A', '--analyze-only', required=False, action='store_true', dest='analyze_only', help='Do not convert files, just output stats file.')
     parser.add_argument('-C', '--consolidate', required=False, action='store_true', dest='consolidate', help='Consolidate filtered CSVs into single file in simple form (name, family id, birthdate only).')
+    parser.add_argument('-K', '--keep-types', required=False, action='store_true', dest='keep_types', help='Keep datatypes from original Excel. Imports all data as strings, unless set.')
+
     args = parser.parse_args()
 
     started = datetime.datetime.now()
@@ -146,7 +157,8 @@ def main():
         filesindir, processed, converted, totalrows = doPrep(args.inpath,
                                                              os.path.abspath(args.outpath),
                                                              args.analyze_only,
-                                                             args.consolidate)
+                                                             args.consolidate,
+                                                             args.keep_types)
 
     finished = datetime.datetime.now()
     elapsed = finished - started

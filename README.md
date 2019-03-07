@@ -62,6 +62,8 @@ The required columns for consolidated file are:
     'first_name_corrected', 
     'other_names',
     'date_of_birth',
+    'year_of_birth',
     'family_number'
 
 ```
+ 4. By default, the script will read all values from the incoming spreadsheet as `str`. The `--keep-types` flag will import data with the original Excel datatype. Note that currently this has little effect on output behavior since data is exported as CSV format; however, this will support new functionality as other filtering/conversion logic is added.

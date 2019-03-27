@@ -36,9 +36,8 @@ def doFilters(namesdata):
     #remove empty rows
     namesdata.dropna(axis='index',how='all',inplace=True)
 
-    #trim column names
-    namesdata.columns.str.strip()
     #normalize column names
+    namesdata.rename(columns=(lambda c:c.strip()),inplace=True)
     namesdata.rename(columns=(lambda c:c.replace(')','')),inplace=True)
     namesdata.rename(columns=(lambda c:c.replace('(','')),inplace=True)
     namesdata.rename(columns=(lambda c:c.replace(' ','_')),inplace=True)
@@ -54,6 +53,8 @@ def doSimplify(namesdata,filename):
                 'other_names',
                 'date_of_birth',
                 'year_of_birth',
+                'pre-evacuation_address',
+                'date_of_original_entry',
                 'family_number']
     missingcols = []
     #check if required cols are missing
@@ -115,7 +116,7 @@ def doPrep(inpath,outpath,analyze_only,consolidate,keep_types):
                         namesdata, missingcols = doSimplify(namesdata,infile)
                         if not missingcols:
                             #write namesdata to csv; print headers only if first pass
-                            namesdata.to_csv(consolidatedfile,mode='a',header=(not os.path.exists(consolidatedfile)))
+                            namesdata.to_csv(consolidatedfile,mode='a',header=(not os.path.exists(consolidatedfile)),index=False)
                             print('Added filtered csv to consolidated: {}\n'.format(os.path.abspath(file)))
                         else:
                             print('WARNING: Skipping {} for consolidation. Missing columns: {}'.format(os.path.abspath(file),missingcols))

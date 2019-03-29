@@ -48,26 +48,38 @@ def doFilters(namesdata):
 def doSimplify(namesdata,filename):
     keepcols = ['original_order',
                 'far_line_id',
+                'family_number',
                 'last_name_corrected',
                 'first_name_corrected', 
                 'other_names',
                 'date_of_birth',
                 'year_of_birth',
+                'sex',
+                'citizenship',
+                'alien_registration_no.',
+                'type_of_original_entry',
                 'pre-evacuation_address',
+                'pre-evacuation_state',
                 'date_of_original_entry',
-                'family_number']
+                'type_of_final_departure',
+                'date_of_final_departure',
+                'final_departure_state',
+                'camp_address_original',
+                'camp_address_block',
+                'camp_address_barracks',
+                'camp_address_room']
     missingcols = []
-    #check if required cols are missing
+    #check if cols are missing, add an empty one, then warn
     for label in keepcols:
         if label not in namesdata.columns:
-            print('ERROR: {} not found in {}. Skipping file for consolidation...'.format(label,os.path.abspath(filename)))
+            namesdata[label] = ''
+            print('WARNING: {} not found in {}. Adding to consolidated with empty values...'.format(label,os.path.abspath(filename)))
             missingcols.append(label)
-
-    if not missingcols:
-        #drop extra cols; reorder
-        namesdata = namesdata[keepcols]
-        #add column for file identifier
-        namesdata.loc[:,'far'] = os.path.splitext(os.path.basename(filename))[0]
+    
+    #drop extra cols; reorder
+    namesdata = namesdata[keepcols]
+    #add column for far file identifier
+    namesdata.insert(0,'far', os.path.splitext(os.path.basename(filename))[0])
 
     return(namesdata,missingcols)
 

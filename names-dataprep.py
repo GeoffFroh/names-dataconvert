@@ -89,6 +89,7 @@ def doPrep(inpath,outpath,analyze_only,consolidate,keep_types):
     processed = 0
     converted = 0
     totalrows = 0
+    rowswritten = 0
     analyzefile = os.path.join(outpath, '{:%Y%m%d-%H%M%S}-namesanalyze.txt'.format(datetime.datetime.now()))
     consolidatedfile = os.path.join(outpath, '{:%Y%m%d-%H%M%S}-far_all.csv'.format(datetime.datetime.now()))
 
@@ -126,20 +127,21 @@ def doPrep(inpath,outpath,analyze_only,consolidate,keep_types):
                     namesdata = doFilters(namesdata)
                     if consolidate:
                         namesdata, missingcols = doSimplify(namesdata,infile)
-                        if not missingcols:
-                            #write namesdata to csv; print headers only if first pass
-                            namesdata.to_csv(consolidatedfile,mode='a',header=(not os.path.exists(consolidatedfile)),index=False)
-                            print('Added filtered csv to consolidated: {}\n'.format(os.path.abspath(file)))
-                        else:
-                            print('WARNING: Skipping {} for consolidation. Missing columns: {}'.format(os.path.abspath(file),missingcols))
+                        if missingcols:
+                            print('WARNING: {} is missing columns: {}'.format(os.path.abspath(file),missingcols))
+                        #write namesdata to csv; print headers only if first pass
+                        namesdata.to_csv(consolidatedfile,mode='a',header=(not os.path.exists(consolidatedfile)),index=False)
+                        print('{} rows added to consolidated csv from: {}\n'.format(len(namesdata.index),os.path.abspath(file)))
+                        rowswritten += len(namesdata.index)
+
                     else:
-                        #save each file to csv
+                        #save each file to individual csv
                         filteredfile = os.path.join(outpath, os.path.splitext(file)[0] + '.csv')
                         namesdata.to_csv(filteredfile)
                         print('Wrote filtered csv: {}'.format(filteredfile))
 
                     converted +=1
-    return(filesindir,processed,converted,totalrows)
+    return(filesindir,processed,converted,totalrows,rowswritten)
 
 def main():
 
@@ -148,7 +150,7 @@ def main():
     parser.add_argument('inpath', help='Path to directory containing excel files for conversion.')
     parser.add_argument('outpath', nargs='?', default=os.getcwd(), help='Path to write filtered files.')
     parser.add_argument('-A', '--analyze-only', required=False, action='store_true', dest='analyze_only', help='Do not convert files, just output stats file.')
-    parser.add_argument('-C', '--consolidate', required=False, action='store_true', dest='consolidate', help='Consolidate filtered CSVs into single file in simple form (name, family id, birthdate only).')
+    parser.add_argument('-C', '--consolidate', required=False, action='store_true', dest='consolidate', help='Consolidate filtered CSVs into single file.')
     parser.add_argument('-K', '--keep-types', required=False, action='store_true', dest='keep_types', help='Keep datatypes from original Excel. Imports all data as strings, unless set.')
 
     args = parser.parse_args()
@@ -167,7 +169,7 @@ def main():
     if inputerrs != '':
         print('Error -- script exiting...\n{}'.format(inputerrs))
     else:
-        filesindir, processed, converted, totalrows = doPrep(args.inpath,
+        filesindir, processed, converted, totalrows,rowswritten = doPrep(args.inpath,
                                                              os.path.abspath(args.outpath),
                                                              args.analyze_only,
                                                              args.consolidate,
@@ -179,12 +181,13 @@ def main():
     print('Started: {}'.format(started))
     print('Finished: {}'.format(finished))
     print('Elapsed: {}'.format(elapsed))
-    print('{} in {}. {} files processed. {} files converted. {} rows total.'.format(filesindir,
+    print('{} in {}. {} files processed. {} files converted. {} rows total from input.'.format(filesindir,
                                                                                     os.path.abspath(args.inpath),
                                                                                     processed,
                                                                                     converted,
                                                                                     totalrows))
-
+    if args.consolidate:
+        print('{} rows written to consolidated CSV.'.format(rowswritten))
     return
 
 if __name__ == '__main__':

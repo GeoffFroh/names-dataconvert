@@ -43,18 +43,27 @@ def doFilters(namesdata):
     namesdata.rename(columns=(lambda c:c.replace(' ','_')),inplace=True)
     namesdata.rename(columns=(lambda c:c.lower()),inplace=True)
 
+    #standardize reference col name
+    for col in namesdata.columns:
+        if 'reference' in col:
+            namesdata.rename(columns={col:'reference'},inplace=True)
+            break
+
     return(namesdata)
 
-def doSimplify(namesdata,filename):
+def doConsolidate(namesdata,filename):
     keepcols = ['original_order',
                 'far_line_id',
                 'family_number',
                 'last_name_corrected',
-                'first_name_corrected', 
+                'last_name_original',
+                'first_name_corrected',
+                'first_name_original', 
                 'other_names',
                 'date_of_birth',
                 'year_of_birth',
                 'sex',
+                'marital_status',
                 'citizenship',
                 'alien_registration_no.',
                 'type_of_original_entry',
@@ -67,7 +76,9 @@ def doSimplify(namesdata,filename):
                 'camp_address_original',
                 'camp_address_block',
                 'camp_address_barracks',
-                'camp_address_room']
+                'camp_address_room',
+                'reference',
+                'notes']
     missingcols = []
     #check if cols are missing, add an empty one, then warn
     for label in keepcols:
@@ -75,7 +86,7 @@ def doSimplify(namesdata,filename):
             namesdata[label] = ''
             print('WARNING: {} not found in {}. Adding to consolidated with empty values...'.format(label,os.path.abspath(filename)))
             missingcols.append(label)
-    
+
     #drop extra cols; reorder
     namesdata = namesdata[keepcols]
     #add column for far file identifier
@@ -126,7 +137,7 @@ def doPrep(inpath,outpath,analyze_only,consolidate,keep_types):
                 if not analyze_only:
                     namesdata = doFilters(namesdata)
                     if consolidate:
-                        namesdata, missingcols = doSimplify(namesdata,infile)
+                        namesdata, missingcols = doConsolidate(namesdata,infile)
                         if missingcols:
                             print('WARNING: {} is missing columns: {}'.format(os.path.abspath(file),missingcols))
                         #write namesdata to csv; print headers only if first pass
